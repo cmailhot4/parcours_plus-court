@@ -7,7 +7,6 @@ var visite
 var type
 var voisins
 var voisins_accessibles
-var voisins_pivots
 var distance
 var index_precedent
 
@@ -19,7 +18,6 @@ func _ready():
 	type = null
 	voisins = []
 	voisins_accessibles = []
-	voisins_pivots = []
 	distance = 99999 #infini (relatif)
 	index_precedent = null
 
@@ -34,12 +32,6 @@ func _set_voisins_accessibles():
 	for i in range(voisins.size()):
 		if typeof(voisins[i]) == TYPE_INT:
 			voisins_accessibles.append(voisins[i])
-
-# Permet d'ajouter un voisin pivot avec la distance à celui-ci
-# v: index de la case pivot voisine
-# d: distance entre la case et v
-func _set_voisins_pivots(v, d):
-	voisins_pivots.append([v, d])
 
 # Change le type de la case et associe la bonne couleur
 func _set_type(t):

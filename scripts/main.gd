@@ -32,6 +32,10 @@ func _ready():
 	# Initialise les voisins
 	_set_voisins()
 	
+	# Pause avant départ de la recherche du plus petit chemin
+	print("Départ du parcourt du labyrinthe dans 2 secondes.")
+	yield(get_tree().create_timer(2.0), "timeout")
+	
 	# Parcourt le labyrinthe pour trouver les cases pivots (celles qui ont 3 voisins accessibles).
 	_trouver_cases_pivots()
 	
@@ -55,6 +59,10 @@ func _set_murs(tab_index):
 func _set_depart_arrive(index_depart, index_arrivee):
 	cases[index_depart]._set_type('depart')
 	cases[index_arrivee]._set_type('arrivee')
+	
+	for i in range(cases.size()):
+		if cases[i].type == null:
+			cases[i]._set_type('case')
 
 # Attribue les voisins de chaque case dans cet ordre: [gauche, haut, droite et bas]
 func _set_voisins():
@@ -161,44 +169,22 @@ func _trouver_cases_pivots():
 	
 	# parcourt chaque case du labyrinthe et l'ajoute au tableau des cases pivots si la case n'est pas un mur, l'arrivée et qu'elle a au moins 3 voisins
 	for i in range(cases.size()):
-		if cases[i].type != 'mur':
-			if cases[i].type != 'arrivee':
-				if cases[i].voisins_accessibles.size() >= 3:
-					cases_pivots.append(cases[i])
+		if cases[i].type == 'case':
+			cases_pivots.append(cases[i])
 	
 	# l'arrivée du labyrinthe est la dernière case pivot
 	cases_pivots.append(cases[i_arrivee])
 	
-	# Voisins de 0
-	cases_pivots[0]._set_voisins_pivots(10, 2)
-	cases_pivots[0]._set_distance(0) #point de départ donc la distance est égale à 0
-	
-	# voisins de 10
-	cases_pivots[1]._set_voisins_pivots(0, 2)
-	cases_pivots[1]._set_voisins_pivots(12, 2)
-	cases_pivots[1]._set_voisins_pivots(22, 4)
-	
-	# voisins de 12
-	cases_pivots[2]._set_voisins_pivots(10, 2)
-	cases_pivots[2]._set_voisins_pivots(22, 2)
-	cases_pivots[2]._set_voisins_pivots(9, 5)
-	
-	# voisins de 22
-	cases_pivots[3]._set_voisins_pivots(10, 4)
-	cases_pivots[3]._set_voisins_pivots(12, 2)
-	cases_pivots[3]._set_voisins_pivots(9, 5)
-	
-	# voisins de 9
-	cases_pivots[4]._set_voisins_pivots(12, 5)
-	cases_pivots[4]._set_voisins_pivots(22, 5)
+	# Point de départ donc la distance est égale à 0
+	cases_pivots[0]._set_distance(0) 
 
 # Fonction qui parcours le labyrinthe pour trouver le chemin le plus court
 func _parcours_plus_court():
 	# La case de départ (i_depart) possède une distance de 0
 	# Toutes les autres cases pivots possèdent un distance infinie (99999)
 	var case_actuelle = cases_pivots[0] #représente la case actuelle
-	var distance_min
-	var done = false
+	var i_distance_min #index de la case avec la plus petite distance
+	var done = false #pour arrêter la boucle
 	
 	# on ajoute les indexs des cases pivots au tableau des cases non visitées
 	for i in range(cases_pivots.size()):
@@ -206,41 +192,42 @@ func _parcours_plus_court():
 	
 	while done == false:
 		# calcul la distance de chaque voisin de la case actuelle et trouve la prochaine case à visiter
-		distance_min = _visiter_voisins(case_actuelle)
+		i_distance_min = _visiter_voisins(case_actuelle)
 	
 		# vérifie que la case avec la plus petite distance est la case d'arrivée du labyrinthe
-		if distance_min == i_arrivee:
-			print(cases[distance_min].distance)
+		if i_distance_min == i_arrivee:
+			print("Distance minimum: ", cases[i_distance_min].distance)
 			done = true
 		else:
-			case_actuelle = cases[distance_min]
+			# la case actuelle devient la case non parcourrue avec la plus petite distance
+			case_actuelle = cases[i_distance_min]
 	
+	# Affichage du chemin le plus court
 	_afficher_solution()
-	
-	print("Terminé")
 
 # Fonction qui permet de visiter les voisins d'une case pour changer leur valeur (distance)
 # c: case actuelle (celle dont on veut visiter les voisins)
 # return: index du voisin ayant la plus petite distance
 func _visiter_voisins(c):
-	var case_pivot_voisin
-	var index_case_voisin
-	var dist
-	var distance_min = 100000
+	var case_pivot_voisin #la case voisine de la case actuelle
+	var index_case_voisin #index de la case voisine de la case actuelle
+	var dist # distance de la case voisine
+	var distance_min = 100000 #pour trouver la distance la plus petite
 	var i_next_case = -1
 	
 	# pour chaque voisin de la case actuelle
-	for i in range(c.voisins_pivots.size()):
-		index_case_voisin = c.voisins_pivots[i][0]
+	for i in range(c.voisins_accessibles.size()):
+		index_case_voisin = c.voisins_accessibles[i]
 		case_pivot_voisin = cases[index_case_voisin] #case voisine de la case actuelle
 		# si la case voisine n'est pas déjà visitée
 		if !case_pivot_voisin.visite:
-			# calcul de la distance entre la case actuelle et sa case voisine
-			dist = c.distance + c.voisins_pivots[i][1]
+			# calcul de la distance entre la case actuelle et sa case voisine (toujours +1 entre chaque case)
+			dist = c.distance + 1
 			# vérifie si la distance entre la case actuelle et la case voisine est plus petite que la valeur de la case voisine
 			if dist < case_pivot_voisin.distance:
 				# la nouvelle distance est plus petite que l'ancienne donc on la change
 				case_pivot_voisin._set_distance(dist)
+				# on note la case par laquelle on n'a passé pour arrivé à cette distance minimum
 				case_pivot_voisin._set_index_precedent(c.index)
 	
 	# marquer la case actuelle comme visitée
@@ -258,27 +245,34 @@ func _visiter_voisins(c):
 			# la nouvelle distance minimum est la distance de la case à l'index i du tableau des cases non visitées
 			distance_min = cases_non_visitees[i].distance
 	
+	# retourne l'index de la case avec la plus petite distance parmis les cases non visitées
 	return i_next_case
-
-# Fonction récursive qui visite et marque les cases
-# case: la case que l'on visite
-func _visiter(case):
-	#ordre_parcours.append(case)
-	case._set_visite()
-	
-	for i in range(case.voisins_accessibles.size()):
-		var voisin = cases[case.voisins_accessibles[i]]
-		if voisin.visite == false:
-			print('Parcourir: ', case.voisins_accessibles[i])
-			_visiter(voisin)
 
 # Fonction qui affiche (change la couleur) les cases parcourrues en ordre
 func _afficher_solution():
 	var couleur_parcour = Color(1, 1, 0, 0.75) #jaune
-	print(cases[9].index_precedent)
-	print(cases[cases[9].index_precedent].index_precedent)
-	#for i in range(ordre_parcours.size()):
+	var index = i_arrivee #index de la case d'arrivée
+	var case_curseur = cases[index] #curseur qui se place sur la case d'arrivée
+	
+	# Ajoute la case d'arrivée à l'ordre du parcours
+	ordre_parcours.append(case_curseur)
+	
+	# Créer le tableau avec les cases à parcourir du chemin le plus court (le nombre de cases à parcourir correspond à la distance de la case d'arrivée)
+	for i in range(cases[i_arrivee].distance):
+		# on trouve la case précédente de la case curseur
+		ordre_parcours.append(cases[case_curseur.index_precedent])
+		# on recule la case curseur sur la précédente
+		index = case_curseur.index_precedent
+		case_curseur = cases[index]
+	
+	# Change la couleur de chaque case du chemin le plus court
+	var index_a_afficher = ordre_parcours.size() - 1 #index de la case à afficher en premier
+	# Parcourt le tableau de l'ordre et affiche de la fin jusqu'au début du tableau (l'ordre du parcourt est en ordre décroissant dans le tableau)
+	for i in range(ordre_parcours.size()):
 		# change la couleur de la case
-		#ordre_parcours[i]._set_couleur(couleur_parcour)
-		# fait une pause de 1 seconde
-		#yield(get_tree().create_timer(0.5), "timeout")
+		ordre_parcours[index_a_afficher]._set_couleur(couleur_parcour)
+		# fait une pause de 0.5 seconde
+		yield(get_tree().create_timer(0.5), "timeout")
+		index_a_afficher -= 1
+	
+	print("Terminé")
