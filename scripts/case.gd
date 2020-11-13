@@ -9,6 +9,7 @@ var voisins
 var voisins_accessibles
 var voisins_pivots
 var distance
+var index_precedent
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
@@ -20,6 +21,7 @@ func _ready():
 	voisins_accessibles = []
 	voisins_pivots = []
 	distance = 99999 #infini (relatif)
+	index_precedent = null
 
 # Permet de modifier les voisins de la case
 # v: tableau des voisins [gauche, haut, droite, bas]
@@ -73,3 +75,8 @@ func _set_distance(d):
 # i: index de la case (dans le tableau des cases)
 func _set_index(i):
 	index = i
+
+# Change la valeur de l'index de la case précédente
+# i: index de la case (dans le tableau des cases) précédente (la case par laquelle on a dû passé pour atteindre notre distance la plus courte)
+func _set_index_precedent(i):
+	index_precedent = i

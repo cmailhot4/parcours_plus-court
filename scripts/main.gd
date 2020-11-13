@@ -33,7 +33,6 @@ func _ready():
 	_set_voisins()
 	
 	# Parcourt le labyrinthe pour trouver les cases pivots (celles qui ont 3 voisins accessibles).
-	# Servira à construire un graphe avec les cases pivots et leur poids (nombre de cases pour s'y rendre)
 	_trouver_cases_pivots()
 	
 	# Parcours le labyrinthe pour trouver le chemin le plus court de la case début à celle de fin
@@ -216,7 +215,7 @@ func _parcours_plus_court():
 		else:
 			case_actuelle = cases[distance_min]
 	
-	#_afficher_solution()
+	_afficher_solution()
 	
 	print("Terminé")
 
@@ -225,22 +224,24 @@ func _parcours_plus_court():
 # return: index du voisin ayant la plus petite distance
 func _visiter_voisins(c):
 	var case_pivot_voisin
+	var index_case_voisin
 	var dist
 	var distance_min = 100000
 	var i_next_case = -1
 	
 	# pour chaque voisin de la case actuelle
 	for i in range(c.voisins_pivots.size()):
-		var index_case_voisin = c.voisins_pivots[i][0]
+		index_case_voisin = c.voisins_pivots[i][0]
 		case_pivot_voisin = cases[index_case_voisin] #case voisine de la case actuelle
-		
-		# calcul de la distance entre la case actuelle et sa case voisine
-		dist = c.distance + c.voisins_pivots[i][1]
-		
-		# vérifie si la distance entre la case actuelle et la case voisine est plus petite que la valeur de la case voisine
-		if dist < case_pivot_voisin.distance:
-			# la nouvelle distance est plus petite que l'ancienne donc on la change
-			case_pivot_voisin._set_distance(dist)
+		# si la case voisine n'est pas déjà visitée
+		if !case_pivot_voisin.visite:
+			# calcul de la distance entre la case actuelle et sa case voisine
+			dist = c.distance + c.voisins_pivots[i][1]
+			# vérifie si la distance entre la case actuelle et la case voisine est plus petite que la valeur de la case voisine
+			if dist < case_pivot_voisin.distance:
+				# la nouvelle distance est plus petite que l'ancienne donc on la change
+				case_pivot_voisin._set_distance(dist)
+				case_pivot_voisin._set_index_precedent(c.index)
 	
 	# marquer la case actuelle comme visitée
 	c._set_visite()
@@ -274,8 +275,10 @@ func _visiter(case):
 # Fonction qui affiche (change la couleur) les cases parcourrues en ordre
 func _afficher_solution():
 	var couleur_parcour = Color(1, 1, 0, 0.75) #jaune
-	for i in range(ordre_parcours.size()):
+	print(cases[9].index_precedent)
+	print(cases[cases[9].index_precedent].index_precedent)
+	#for i in range(ordre_parcours.size()):
 		# change la couleur de la case
-		ordre_parcours[i]._set_couleur(couleur_parcour)
+		#ordre_parcours[i]._set_couleur(couleur_parcour)
 		# fait une pause de 1 seconde
-		yield(get_tree().create_timer(1.0), "timeout")
+		#yield(get_tree().create_timer(0.5), "timeout")
